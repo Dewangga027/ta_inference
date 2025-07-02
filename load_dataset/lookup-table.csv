@@ -1,0 +1,15 @@
+vehicle_class;vehicle_category;length_cm;width_cm;height_cm;weight_kg
+car;City Car;330;147;148;830
+car;Small MPV;420;168;169;1085
+car;Compact Sedan;450;175;146;1280
+car;Large MPV;475;180;178;1665
+car;Large SUV;485;190;183;1800
+truck;Pickup Truck;480;175;178;2005
+truck;Light Truck;500;190;200;2300
+truck;Medium Truck;660;220;250;4000
+truck;Heavy Truck (Empty);900;250;300;7300
+truck;Heavy Truck (Loaded);900;250;300;15000
+bus;Mini Bus;600;200;250;3500
+bus;Medium Bus;800;230;290;5500
+bus;Large Bus;1200;250;310;6500
+bus;Articulated Bus;1800;255;330;19300
