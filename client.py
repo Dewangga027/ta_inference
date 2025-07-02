@@ -47,10 +47,10 @@ ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
 app = ctk.CTk()
-app.title("🚦 AI Traffic Controller")
+app.title("AITraffic (Aitoma Vision)")
 app.geometry("520x420")
 
-ctk.CTkLabel(app, text="🚦 AI Traffic Controller", font=ctk.CTkFont(size=18, weight="bold")).pack(pady=15)
+ctk.CTkLabel(app, text="AITraffic (Aitoma Vision)", font=ctk.CTkFont(size=18, weight="bold")).pack(pady=15)
 
 ctk.CTkLabel(app, text="Pixel to CM:", anchor="w").pack(fill="x", padx=30)
 pixel_entry = ctk.CTkEntry(app, placeholder_text="e.g. 1.5")
@@ -74,6 +74,7 @@ file_btn = ctk.CTkButton(btn_frame, text="📁 Use File", command=select_file, w
 cam_btn.grid(row=0, column=0, padx=15)
 file_btn.grid(row=0, column=1, padx=15)
 
-ctk.CTkLabel(app, text="Made with ❤️  + YOLOv8 + Firebase", font=ctk.CTkFont(size=10)).pack(pady=10)
+ctk.CTkLabel(app, text="Made with     YOLOv15 + Aitoma Core", font=ctk.CTkFont(size=10)).pack(pady=10)
+ctk.CTkLabel(app, text="github: khulqu15", font=ctk.CTkFont(size=10)).pack(pady=0.1)
 
 app.mainloop()

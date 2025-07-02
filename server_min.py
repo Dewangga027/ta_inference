@@ -1,13 +1,11 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import cv2
 import numpy as np
-import base64
-from ultralytics import YOLO
-import time
 import torch
+import time
+from ultralytics import YOLO
 import pyrebase
 import json
-from base64 import b64decode
 
 firebase_config = {
     "apiKey": "AIzaSyAMRydlD04Ui3p7IEIDDpEjLJjnxgDoDsQ",
@@ -17,14 +15,33 @@ firebase_config = {
 }
 firebase = pyrebase.initialize_app(firebase_config)
 db = firebase.database()
+torch.backends.cudnn.benchmark = True
 
 def get_pixel_to_cm():
     return float(db.child("settings").child("pixel_to_cm").get().val() or 1.0)
 
 def get_roi():
     roi = db.child("settings").child("roi").get().val()
-    if not roi: return np.array([[0, 0]])
+    if not roi:
+        return np.array([[0, 0]])
     return np.array(roi, dtype=np.int32)
+
+def resize_frame(frame, target_width=480):
+    h, w = frame.shape[:2]
+    if w == 0 or h == 0:
+        return frame, (w, h), (w, h)
+    scale = target_width / w
+    new_w = target_width
+    new_h = int(h * scale)
+    resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    return resized, (w, h), (new_w, new_h)
+
+def resize_roi(roi, original_size, new_size):
+    orig_w, orig_h = original_size
+    new_w, new_h = new_size
+    scale_x = new_w / 640
+    scale_y = new_h / 640
+    return np.array([[int(x * scale_x), int(y * scale_y)] for x, y in roi], dtype=np.int32)
 
 TONASE_KG = {
     "sedan":        2000,
@@ -47,49 +64,10 @@ def classify(label, w_cm):
     return None
 
 app = FastAPI()
-model = YOLO("yolov8n.pt")
-model.to("cuda:0" if torch.cuda.is_available() else "cpu")
+model = YOLO("yolov8n.pt").to("cuda:0" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    model.half()
 print(f"✔ Loaded YOLO on {model.device}")
-print("CUDA available:", torch.cuda.is_available())
-
-def resize_frame(frame):
-    h, w = frame.shape[:2]
-    if w == 0 or h == 0:
-        return frame
-    new_width = 480
-    new_height = int((new_width / w) * h)
-    return cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
-
-def decode_and_parse(msg):
-    try:
-        parsed = json.loads(msg)
-        b64_data = parsed.get("data", "")
-        pixel_to_cm = float(parsed.get("pixel_to_cm", get_pixel_to_cm()))
-        roi_list = parsed.get("roi", get_roi().tolist())
-        roi = np.array(roi_list, dtype=np.int32)
-
-        frame_data = b64decode(b64_data + '=' * (-len(b64_data) % 4))
-        npimg = np.frombuffer(frame_data, dtype=np.uint8)
-        frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-        if frame is None:
-            print("⚠️ Failed to decode frame")
-            
-        if parsed.get("source", "") == "file":
-            original_size = (frame.shape[1], frame.shape[0])
-            frame = resize_frame(frame)
-            new_size = (frame.shape[1], frame.shape[0])
-            roi = resize_roi(roi, original_size, new_size)
-        
-        return frame, pixel_to_cm, roi
-    except Exception as e:
-        print(f"🔥 JSON decode error: {e}")
-        return None, 1.0, np.array([[0, 0]])
-
-def resize_roi(roi, original_size, new_size):
-    new_w, new_h = new_size
-    scale_x = new_w / 640
-    scale_y = new_h / 640
-    return np.array([[int(x * scale_x), int(y * scale_y)] for x, y in roi], dtype=np.int32)
 
 def process_yolo(frame, roi, pixel_to_cm):
     results = model(frame)[0]
@@ -120,35 +98,33 @@ def overlay_info(frame, roi, prev_time):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
     cv2.polylines(frame, [roi], isClosed=True, color=(0, 0, 255), thickness=2)
 
-async def send_back_frame(websocket, frame):
-    _, encoded = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 50])
-    await websocket.send_text(base64.b64encode(encoded.tobytes()).decode())
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("✅ Client connected")
+    pixel_to_cm = get_pixel_to_cm()
+    raw_roi = get_roi()
     prev_time = time.time()
 
     try:
         while True:
-            msg = await websocket.receive_text()
-            frame, pixel_to_cm, roi = decode_and_parse(msg)
+            raw_bytes = await websocket.receive_bytes()
+            npimg = np.frombuffer(raw_bytes, dtype=np.uint8)
+            frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
             if frame is None:
+                print("⚠️ Failed to decode image")
                 continue
+            
+            frame, orig_size, new_size = resize_frame(frame)
+            roi = resize_roi(raw_roi, orig_size, new_size)
             frame = process_yolo(frame, roi, pixel_to_cm)
             overlay_info(frame, roi, prev_time)
             prev_time = time.time()
 
-            cv2.imshow("YOLO Server GUI", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-            await send_back_frame(websocket, frame)
+            _, encoded = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 40])
+            await websocket.send_bytes(encoded.tobytes())
 
     except WebSocketDisconnect:
         print("⚠️ Client disconnected")
     except Exception as e:
         print(f"🔥 Error: {e}")
-    finally:
-        cv2.destroyAllWindows()

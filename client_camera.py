@@ -1,11 +1,8 @@
 import cv2
-import base64
 import asyncio
 import websockets
 import numpy as np
-import time
 import pyrebase
-import json
 
 firebase_config = {
     "apiKey": "AIzaSyAMRydlD04Ui3p7IEIDDpEjLJjnxgDoDsQ",
@@ -24,37 +21,38 @@ def fetch_settings():
     return pixel_to_cm, roi
 
 async def send_video():
-    uri = "wss://bfdd-120-188-75-254/ws"
+    uri = "wss://bfdd-120-188-75-254.ngrok-free.app/ws"
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("❌ Kamera tidak dapat dibuka.")
+        return
+
     async with websockets.connect(uri, max_size=2**25) as websocket:
-        cap = cv2.VideoCapture(0)
+        print("📡 Terhubung ke server WebSocket.")
         pixel_to_cm, roi = fetch_settings()
 
         while True:
             ret, frame = cap.read()
             if not ret:
+                print("⚠️ Gagal membaca frame.")
                 break
 
-            _, buffer = cv2.imencode('.jpg', frame)
-            b64_frame = base64.b64encode(buffer).decode()
-            payload = json.dumps({
-                "type": "frame",
-                "data": b64_frame,
-                "pixel_to_cm": pixel_to_cm,
-                "roi": roi.tolist(),
-                "source": "camera"
-            })
-            await websocket.send(payload)
+            _, encoded = cv2.imencode('.jpg', frame, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+            await websocket.send(encoded.tobytes())
 
-            result = await websocket.recv()
-            img_bytes = base64.b64decode(result)
-            npimg = cv2.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+            response = await websocket.recv()
+            npimg = np.frombuffer(response, dtype=np.uint8)
+            result_frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
 
-            cv2.imshow("Processed Camera Frame", npimg)
+            if result_frame is not None:
+                cv2.imshow("📷 YOLO Processed Frame", result_frame)
+
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("🛑 Dihentikan oleh user.")
                 break
 
-        cap.release()
-        cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     asyncio.run(send_video())
