@@ -1,0 +1,15 @@
+vehicle_class,vehicle_category,make,model,body_type,year,length_cm,width_cm,height_cm,curb_weight_kg,gvwr_kg,wheelbase_cm,engine_cc,horsepower
+car,City Car,Fiat,Panda,Hatchback,2020,365,165,155,900,1500,2300,1242,69
+car,Compact Sedan,Toyota,Corolla,Sedan,2021,462,178,143,1300,1850,2700,1798,139
+car,Large SUV,Ford,Explorer,SUV,2022,504,200,180,2000,2820,3020,2993,290
+car,Small MPV,Honda,Freed,MPV,2020,421,169,171,1310,1800,2740,1496,118
+car,Large MPV,Toyota,Innova,MPV,2021,473,183,179,1675,2150,2750,1998,139
+truck,Pickup Truck,Toyota,Hilux,Pickup,2022,533,185,181,1950,3500,3080,2755,204
+truck,Light Truck,Isuzu,Elf,Light Truck,2021,520,190,220,2300,5000,2765,2999,130
+truck,Medium Truck,Mitsubishi,Fuso,Truck,2021,660,220,250,4000,10000,3700,3908,150
+truck,Heavy Truck (Empty),Hino,700,Truck,2022,900,250,300,7300,18000,5200,12913,280
+truck,Heavy Truck (Loaded),Hino,700,Truck,2022,900,250,300,15000,32000,5200,12913,280
+bus,Mini Bus,Ford,Transit,Minibus,2021,600,200,250,3500,7000,3600,1996,130
+bus,Medium Bus,Hyundai,County,Bus,2021,800,230,290,5500,11000,4500,3933,160
+bus,Large Bus,Volvo,9700,Coach,2022,1200,250,310,6500,18000,6000,10500,350
+bus,Articulated Bus,Mercedes,Citaro,Articulated,2022,1800,255,330,19300,30000,11940,11967,300

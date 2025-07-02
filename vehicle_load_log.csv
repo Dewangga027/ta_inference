@@ -1,0 +1,13 @@
+Track ID,First Frame,Label,Category,Weight (kg)
+2,3,car,sedan,2000
+3,3,car,sedan,2000
+14,3,truck,truk ringan,5100
+1,85,car,sedan,2000
+18,86,car,sedan,2000
+
+Total Unique Vehicles,5
+Average Weight (kg),2620.00
+
+Counts per Category
+sedan,4
+truk ringan,1
