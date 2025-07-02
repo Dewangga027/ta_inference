@@ -51,6 +51,14 @@ model = YOLO("yolov8n.pt")
 model.to("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"✔ Loaded YOLO on {model.device}")
 
+def resize_frame_base480(frame):
+    h, w = frame.shape[:2]
+    if w == 0 or h == 0:
+        return frame
+    new_width = 480
+    new_height = int((new_width / w) * h)
+    return cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
 def decode_and_parse(msg):
     try:
         parsed = json.loads(msg)
@@ -64,10 +72,24 @@ def decode_and_parse(msg):
         frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
         if frame is None:
             print("⚠️ Failed to decode frame")
+            
+        if parsed.get("source", "") == "file":
+            original_size = (frame.shape[1], frame.shape[0])
+            frame = resize_frame_base480(frame)
+            new_size = (frame.shape[1], frame.shape[0])
+            roi = resize_roi(roi, original_size, new_size)
+        
         return frame, pixel_to_cm, roi
     except Exception as e:
         print(f"🔥 JSON decode error: {e}")
         return None, 1.0, np.array([[0, 0]])
+
+def resize_roi(roi, original_size, new_size):
+    orig_w, orig_h = original_size
+    new_w, new_h = new_size
+    scale_x = new_w / orig_w
+    scale_y = new_h / orig_h
+    return np.array([[int(x * scale_x), int(y * scale_y)] for x, y in roi], dtype=np.int32)
 
 def process_yolo(frame, roi, pixel_to_cm):
     results = model(frame)[0]

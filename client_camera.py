@@ -24,7 +24,7 @@ def fetch_settings():
     return pixel_to_cm, roi
 
 async def send_video():
-    uri = "wss://bfdd-120-188-75-254/ws"
+    uri = "wss://bfdd-120-188-75-254.ngrok-free.app/ws"
     async with websockets.connect(uri, max_size=2**25) as websocket:
         cap = cv2.VideoCapture(0)
         pixel_to_cm, roi = fetch_settings()
@@ -40,7 +40,8 @@ async def send_video():
                 "type": "frame",
                 "data": b64_frame,
                 "pixel_to_cm": pixel_to_cm,
-                "roi": roi.tolist()
+                "roi": roi.tolist(),
+                "source": "camera"
             })
             await websocket.send(payload)
 

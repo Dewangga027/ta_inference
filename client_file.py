@@ -25,7 +25,7 @@ def fetch_settings():
     return pixel_to_cm, roi
 
 async def process_file(path):
-    uri = "wss://bfdd-120-188-75-254/ws"
+    uri = "wss://bfdd-120-188-75-254.ngrok-free.app/ws"
     async with websockets.connect(uri, max_size=2**25) as websocket:
         pixel_to_cm, roi = fetch_settings()
 
@@ -37,7 +37,8 @@ async def process_file(path):
                 "type": "frame",
                 "data": b64_frame,
                 "pixel_to_cm": pixel_to_cm,
-                "roi": roi.tolist()
+                "roi": roi.tolist(),
+                "source": "file"
             })
             await websocket.send(payload)
             result = await websocket.recv()
@@ -58,7 +59,8 @@ async def process_file(path):
                     "type": "frame",
                     "data": b64_frame,
                     "pixel_to_cm": pixel_to_cm,
-                    "roi": roi.tolist()
+                    "roi": roi.tolist(),
+                    "source": "file"
                 })
                 await websocket.send(payload)
                 result = await websocket.recv()
