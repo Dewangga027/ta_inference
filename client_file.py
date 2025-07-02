@@ -22,7 +22,7 @@ def fetch_settings():
     return pixel_to_cm, roi
 
 async def process_file(path):
-    uri = "wss://bfdd-120-188-75-254.ngrok-free.app/ws"
+    uri = "ws://43.218.26.251:8000/ws"
     async with websockets.connect(uri, max_size=2**25) as websocket:
         print(f"📁 Sending file: {path}")
         is_image = path.lower().endswith((".jpg", ".jpeg", ".png"))

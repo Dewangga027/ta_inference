@@ -21,7 +21,7 @@ def fetch_settings():
     return pixel_to_cm, roi
 
 async def send_video():
-    uri = "wss://bfdd-120-188-75-254.ngrok-free.app/ws"
+    uri = "ws://43.218.26.251:8000/ws"
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("❌ Kamera tidak dapat dibuka.")
